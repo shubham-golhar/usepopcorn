@@ -56,7 +56,36 @@ const SelectedMovieDetails = ({
     }
 
     getMovieDetails();
-  }, [selectedId]);
+  }, [selectedId, KEY]);
+
+  useEffect(
+    function () {
+      if (!title) return;
+      document.title = `Movie | ${title}`;
+
+      return function () {
+        document.title = "UsePopcorn";
+        // console.log(`clean up effect for movie ${title}`);
+      };
+    },
+    [title]
+  );
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (e.code === "Escape") {
+          onCloseMovie();
+        }
+      }
+      document.addEventListener("keydown", callback);
+
+      return function () {
+        document.removeEventListener("keydown", callback);
+      };
+    },
+    [onCloseMovie]
+  );
   return (
     <div className="details">
       {isLoading ? (
@@ -108,8 +137,6 @@ const SelectedMovieDetails = ({
           </section>
         </>
       )}
-
-      {selectedId}
     </div>
   );
 };

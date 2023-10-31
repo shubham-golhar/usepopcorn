@@ -69,7 +69,7 @@ export default function App() {
 
   const [error, setError] = useState("");
 
-  const [query, setQuery] = useState("inception");
+  const [query, setQuery] = useState("");
 
   const [selectedId, setSelectedID] = useState(null);
 
@@ -122,12 +122,14 @@ export default function App() {
     setWatched((currWatch) => currWatch.filter((movie) => movie.imdbID !== id));
   }
   useEffect(() => {
+    const controller = new AbortController();
     const fetchMovies = async () => {
       try {
         setIsLoading(true);
         setError("");
         const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+          { signal: controller.signal }
         );
 
         if (!res.ok)
@@ -138,9 +140,13 @@ export default function App() {
         if (data.Response === "False") throw new Error("Movie Not Found");
 
         setMovies(data.Search);
+        setError("");
       } catch (err) {
-        console.error("dssdsd", err.message);
-        setError(err.message);
+        if (err.name !== "AbortError") {
+          console.log("dssdsd", err.message);
+          setError(err.message);
+        }
+        // setError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -151,8 +157,13 @@ export default function App() {
       setError("");
       return;
     }
+    handleCloseMovie();
     fetchMovies();
+    return function () {
+      controller.abort();
+    };
   }, [query]);
+
   return (
     <>
       <Navbar>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import StarRating from "./StarRating";
 import { Loader } from "./Loader";
+import UseKey from "./UseKey";
 const SelectedMovieDetails = ({
   selectedId,
   onCloseMovie,
@@ -12,11 +13,22 @@ const SelectedMovieDetails = ({
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
 
+  //to check the working of ref and how may times the user seleted the rating and counting of that
+  // const countRef = useRef(0);
+
+  // useEffect(
+  //   function () {
+  //     if (userRating) countRef.current = countRef.current + 1;
+  //   },
+  //   [userRating]
+  // );
+
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
 
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
   )?.userRating;
+
   const {
     Title: title,
     Year: year,
@@ -39,6 +51,7 @@ const SelectedMovieDetails = ({
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      // countRatingDecisions: countRef.current,
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
@@ -71,21 +84,22 @@ const SelectedMovieDetails = ({
     [title]
   );
 
-  useEffect(
-    function () {
-      function callback(e) {
-        if (e.code === "Escape") {
-          onCloseMovie();
-        }
-      }
-      document.addEventListener("keydown", callback);
+  UseKey("Escape", onCloseMovie);
+  // useEffect(
+  //   function () {
+  //     function callback(e) {
+  //       if (e.code === "Escape") {
+  //         onCloseMovie();
+  //       }
+  //     }
+  //     document.addEventListener("keydown", callback);
 
-      return function () {
-        document.removeEventListener("keydown", callback);
-      };
-    },
-    [onCloseMovie]
-  );
+  //     return function () {
+  //       document.removeEventListener("keydown", callback);
+  //     };
+  //   },
+  //   [onCloseMovie]
+  // );
   return (
     <div className="details">
       {isLoading ? (

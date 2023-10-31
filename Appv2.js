@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
 import Main from "./components/Main";
 import Search from "./components/Search";
@@ -10,9 +10,7 @@ import WatchedSummery from "./components/WatchedSummery";
 import WatchedList from "./components/WatchedList";
 import { Loader } from "./components/Loader";
 import ErrorMessage from "./components/ErrorMessage";
-import SelectedMovieDetails from "./components/SelectedMovieDetails";
-import { UseMovies } from "./components/UseMovies";
-import UseLocalStorageState from "./components/UseLocalStorageState";
+import SelectedMovieDetails from "./components/SelectedMovie";
 
 //   {
 //     imdbID: "tt1375666",
@@ -63,20 +61,53 @@ import UseLocalStorageState from "./components/UseLocalStorageState";
 const KEY = "f84fc31d";
 
 export default function App() {
+  const [movies, setMovies] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [error, setError] = useState("");
+
   const [query, setQuery] = useState("");
 
   const [selectedId, setSelectedID] = useState(null);
 
-  const [watched, setWatched] = UseLocalStorageState([], "watched");
+  // const [watched, setWatched] = useState([]);
 
-  // const [watched, setWatched] = useState(function () {
-  //   const storedValue = localStorage.getItem("watched");
-  //   return JSON.parse(storedValue); //we need to pase because we save data in the string format .
-  // });
+  const [watched, setWatched] = useState(function () {
+    const storedValue = localStorage.getItem("watched");
+    return JSON.parse(storedValue); //we need to pase because we save data in the string format .
+  });
 
-  // const { movies, isLoading, error } = UseMovies(query, handleCloseMovie); //hoisting is happning here with handleClose movie as we are using this function without declaring it first thats why use nornmal function while defining the method. also with this case it is going into infinite loop so for that hiding this
+  // async function fetchMovies() {
+  //   try {
+  //     setIsLoading(true);
+  //     setError("");
+  //     const res = await fetch(
+  //       `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+  //     );
 
-  const { movies, isLoading, error } = UseMovies(query);
+  //     if (!res.ok) throw new Error("Something went wrong with fetching movies");
+
+  //     const data = await res.json();
+
+  //     if (data.Response === "False") throw new Error("Movie Not Found");
+
+  //     setMovies(data.Search);
+  //   } catch (err) {
+  //     console.error("dssdsd", err.message);
+  //     setError(err.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }
+  // useEffect(() => {
+  //   if (query.length < 3) {
+  //     setMovies([]);
+  //     setError("");
+  //     return;
+  //   }
+  //   fetchMovies();
+  // }, [query]);
 
   const handleSelectdMovie = (movieID) => {
     setSelectedID((currselectedid) =>
@@ -100,12 +131,55 @@ export default function App() {
     setWatched((currWatch) => currWatch.filter((movie) => movie.imdbID !== id));
   }
 
-  // useEffect(
-  //   function () {
-  //     localStorage.setItem("watched", JSON.stringify(watched));
-  //   },
-  //   [watched]
-  // );
+  useEffect(
+    function () {
+      localStorage.setItem("watched", JSON.stringify(watched));
+    },
+    [watched]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchMovies = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+          { signal: controller.signal }
+        );
+
+        if (!res.ok)
+          throw new Error("Something went wrong with fetching movies");
+
+        const data = await res.json();
+
+        if (data.Response === "False") throw new Error("Movie Not Found");
+
+        setMovies(data.Search);
+        setError("");
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.log("dssdsd", err.message);
+          setError(err.message);
+        }
+        // setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (query.length < 3) {
+      setMovies([]);
+      setError("");
+      return;
+    }
+    handleCloseMovie();
+    fetchMovies();
+    return function () {
+      controller.abort();
+    };
+  }, [query]);
 
   return (
     <>
